@@ -2,23 +2,32 @@
 
 import { useEffect, useState } from 'react';
 
+// 1. Tell TypeScript exactly what a "Heading" looks like
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
+
 export default function TableOfContents() {
-  const [headings, setHeadings] = useState([]);
+  // 2. Add <Heading[]> so TS knows this array is not empty/never
+  const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState('');
 
   useEffect(() => {
-    let observer;
+    // 3. Explicitly type these variables to fix the "implicitly any" errors
+    let observer: IntersectionObserver;
+    let fallbackTimer: ReturnType<typeof setTimeout>;
 
-    // Wrap the initialization in a function so we can retry it
     const initToc = () => {
       const article = document.getElementById('article-content');
       if (!article) return false;
 
-      // Included h1 just in case WordPress uses them for sub-headings
-      const elements = Array.from(article.querySelectorAll('h1, h2, h3'));
+      // Add "as HTMLElement[]" so TS knows these have innerText properties
+      const elements = Array.from(article.querySelectorAll('h1, h2, h3')) as HTMLElement[];
       if (elements.length === 0) return false;
 
-      const toc = elements.map((el) => {
+      const toc: Heading[] = elements.map((el) => {
         const id = el.innerText
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
@@ -29,7 +38,7 @@ export default function TableOfContents() {
         return {
           id,
           text: el.innerText,
-          level: el.tagName === 'H3' ? 3 : 2, // Group H1 and H2 together at the top level
+          level: el.tagName === 'H3' ? 3 : 2, 
         };
       });
 
@@ -50,11 +59,8 @@ export default function TableOfContents() {
       return true;
     };
 
-    // 1. Try to find the headings immediately
     const success = initToc();
 
-    // 2. If Next.js hasn't injected the HTML yet, wait 250ms and try again
-    let fallbackTimer;
     if (!success) {
       fallbackTimer = setTimeout(initToc, 250);
     }
@@ -76,7 +82,6 @@ export default function TableOfContents() {
         </svg>
       </div>
       
-      {/* Added max-height and overflow-y-auto so long lists scroll internally */}
       <nav className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
         <ul className="flex flex-col gap-3 text-sm font-medium">
           {headings.map((heading) => (
