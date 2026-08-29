@@ -1,12 +1,21 @@
 import Link from 'next/link';
 
+// Tell TypeScript what props to expect
+interface ProductCardProps {
+  title: string;
+  badge?: string;
+  pros?: string[];
+  cons?: string[];
+  link?: string;
+}
+
 export default function ProductCard({ 
   title, 
   badge = "Top Pick", 
   pros = [], 
   cons = [], 
   link = "#" 
-}) {
+}: ProductCardProps) {
   return (
     <div className="my-10 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg shadow-slate-100 font-sans not-prose">
       

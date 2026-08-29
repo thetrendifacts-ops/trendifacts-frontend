@@ -3,7 +3,7 @@ import Link from 'next/link';
 import AdSlot from '../components/AdSlot';
 
 // 1. Compact Card for "Highest Rated Gear"
-const CompactCard = ({ post }) => (
+const CompactCard = ({ post }: { post: any }) => (
   <Link href={`/${post.slug}`} className="group flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg border border-slate-100 transition-all h-full">
     <div className="w-28 h-28 md:w-32 md:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 relative">
       {post.featuredImage ? (
@@ -38,7 +38,7 @@ const CompactCard = ({ post }) => (
 );
 
 // 2. Standard Post Card for Categories
-const PostCard = ({ post }) => (
+const PostCard = ({ post }: { post: any }) => (
   <Link href={`/${post.slug}`} className="group flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg border border-slate-100 transition-all h-full">
     <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 mb-4 relative">
       {post.featuredImage ? (
@@ -85,7 +85,7 @@ export default async function Home() {
   const heroPost = latestPosts[0]?.node;
   const subPosts = [latestPosts[1]?.node, latestPosts[2]?.node].filter(Boolean);
   
-  const topRatedPosts = latestPosts.slice(3, 6).map(edge => edge.node);
+  const topRatedPosts = latestPosts.slice(3, 6).map((edge: any) => edge.node);
 
   const runtimePosts = runtimeCategory?.posts?.edges?.slice(0, 2) || [];
   const gearPosts = gearCategory?.posts?.edges?.slice(0, 2) || [];
@@ -115,7 +115,7 @@ export default async function Home() {
             </Link>
 
             <div className="lg:col-span-4 flex flex-col gap-4">
-              {subPosts.map((post) => (
+              {subPosts.map((post: any) => (
                 <Link key={post.id} href={`/${post?.slug}`} className="group relative rounded-2xl overflow-hidden flex-1 min-h-[240px]">
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent z-10" />
                   {post?.featuredImage && (
@@ -145,7 +145,7 @@ export default async function Home() {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {topRatedPosts.map(post => (
+              {topRatedPosts.map((post: any) => (
                 <CompactCard key={post.id} post={post} />
               ))}
             </div>
@@ -171,7 +171,7 @@ export default async function Home() {
                   <Link href="/category/runtime-sizing-guides" className="text-emerald-600 font-bold text-sm tracking-widest hover:text-emerald-700 transition-colors">SEE ALL &rarr;</Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {runtimePosts.map(({ node }) => (
+                  {runtimePosts.map(({ node }: { node: any }) => (
                     <PostCard key={node.id} post={node} />
                   ))}
                 </div>
@@ -186,7 +186,7 @@ export default async function Home() {
                   <Link href="/category/gear-buying-guides" className="text-emerald-600 font-bold text-sm tracking-widest hover:text-emerald-700 transition-colors">SEE ALL &rarr;</Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {gearPosts.map(({ node }) => (
+                  {gearPosts.map(({ node }: { node: any }) => (
                     <PostCard key={node.id} post={node} />
                   ))}
                 </div>
@@ -201,7 +201,7 @@ export default async function Home() {
                   <Link href="/category/outage-prep-checklists" className="text-emerald-600 font-bold text-sm tracking-widest hover:text-emerald-700 transition-colors">SEE ALL &rarr;</Link>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {outagePosts.map(({ node }) => (
+                  {outagePosts.map(({ node }: { node: any }) => (
                     <PostCard key={node.id} post={node} />
                   ))}
                 </div>

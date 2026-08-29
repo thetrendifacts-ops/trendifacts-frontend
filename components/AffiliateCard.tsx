@@ -2,13 +2,22 @@
 
 import Link from 'next/link';
 
+// 1. Define the exact types for the incoming props
+interface AffiliateCardProps {
+  productName: string;
+  imageSrc: string;
+  description: string;
+  amazonLink: string;
+  pros: string[];
+}
+
 export default function AffiliateCard({ 
   productName, 
   imageSrc, 
   description, 
   amazonLink, 
   pros 
-}) {
+}: AffiliateCardProps) { // 2. Apply the interface to the component
   return (
     <div className="w-full max-w-3xl mx-auto my-10 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-md flex flex-col md:flex-row transition-shadow hover:shadow-lg">
       
@@ -18,7 +27,8 @@ export default function AffiliateCard({
           src={imageSrc} 
           alt={productName} 
           className="max-w-full h-auto object-contain mix-blend-multiply"
-          onError={(e) => { e.target.src = '/placeholder.jpg' }}
+          // 3. Cast e.target as HTMLImageElement so TypeScript knows it has a 'src' property
+          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg' }}
         />
       </div>
 
@@ -34,7 +44,8 @@ export default function AffiliateCard({
 
           {pros && pros.length > 0 && (
             <ul className="mb-6 space-y-2">
-              {pros.map((pro, index) => (
+              {/* 4. explicitly type 'pro' and 'index' */}
+              {pros.map((pro: string, index: number) => (
                 <li key={index} className="flex items-start text-sm text-slate-700 font-medium">
                   <svg className="w-5 h-5 text-emerald-500 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

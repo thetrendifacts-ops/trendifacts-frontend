@@ -2,9 +2,16 @@
 
 import { useEffect, useRef } from 'react';
 
-export default function AdSlot({ adSlot, format = 'auto', responsive = 'true' }) {
-  // 1. Create a ref to track initialization
+// Add the interface and use '?' to make adSlot optional
+interface AdSlotProps {
+  adSlot?: string;
+  format?: string;
+  responsive?: string;
+}
+
+export default function AdSlot({ adSlot, format = 'auto', responsive = 'true' }: AdSlotProps) {
   const adInitialized = useRef(false);
+// ... rest of your component remains the same
 
   useEffect(() => {
     // 2. Only push the ad if it hasn't been initialized yet
