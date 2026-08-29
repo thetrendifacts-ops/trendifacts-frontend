@@ -45,3 +45,4 @@ export default function AdSlot({ adSlot, format = 'auto', responsive = 'true' }:
     </div>
   );
 }
+
