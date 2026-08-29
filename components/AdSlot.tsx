@@ -2,7 +2,13 @@
 
 import { useEffect, useRef } from 'react';
 
-// Add the interface and use '?' to make adSlot optional
+// 1. Tell TypeScript that adsbygoogle exists on the Window object
+declare global {
+  interface Window {
+    adsbygoogle: any;
+  }
+}
+
 interface AdSlotProps {
   adSlot?: string;
   format?: string;
@@ -11,14 +17,13 @@ interface AdSlotProps {
 
 export default function AdSlot({ adSlot, format = 'auto', responsive = 'true' }: AdSlotProps) {
   const adInitialized = useRef(false);
-// ... rest of your component remains the same
 
   useEffect(() => {
-    // 2. Only push the ad if it hasn't been initialized yet
     if (!adInitialized.current) {
       try {
+        // 2. The window object will no longer throw a type error here
         (window.adsbygoogle = window.adsbygoogle || []).push({});
-        adInitialized.current = true; // Mark as initialized
+        adInitialized.current = true;
       } catch (error) {
         console.error('AdSense error:', error);
       }
