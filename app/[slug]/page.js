@@ -12,7 +12,13 @@ export async function generateMetadata({ params }) {
   const post = await getPostBySlug(resolvedParams.slug);
   
   if (!post) return { title: 'Post Not Found | Trendifacts' };
-  return { title: `${post.title} | Trendifacts` };
+  
+  return { 
+    title: `${post.title} | Trendifacts`,
+    alternates: {
+      canonical: `https://trendifacts.com/${resolvedParams.slug}`,
+    },
+  };
 }
 
 // Reusable Card for the "Read Next" section
