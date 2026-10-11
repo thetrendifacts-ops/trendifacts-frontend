@@ -18,8 +18,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Trendifacts - Premium Testing & Technical Guides",
   description: "In-depth reviews and guides for tech and power stations.",
+  verification: {
+    other: {
+      "p:domain_verify": ["9390856b389e6d258a8f5522fbeb2957"],
+    },
+  },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
