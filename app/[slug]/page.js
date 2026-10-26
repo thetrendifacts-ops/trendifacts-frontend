@@ -4,6 +4,7 @@ import Link from 'next/link';
 import AdSlot from '@/components/AdSlot';
 import TableOfContents from '@/components/TableOfContents';
 import ProductCard from '@/components/ProductCard';
+import RuntimeCalculator from '@/components/RuntimeCalculator';
 import parse, { domToReact } from 'html-react-parser';
 
 // Generate SEO Metadata
@@ -49,7 +50,6 @@ const RelatedPostCard = ({ post }) => (
 export default async function SinglePost({ params }) {
   const resolvedParams = await params;
   
-  // Fetch the current post AND the latest posts simultaneously
   const [post, latestPostsData] = await Promise.all([
     getPostBySlug(resolvedParams.slug),
     getLatestPosts()
@@ -59,7 +59,6 @@ export default async function SinglePost({ params }) {
     return notFound();
   }
 
-  // Filter out the current post from the related posts list, and grab the top 3
   const relatedPosts = latestPostsData?.edges
     ?.map(edge => edge.node)
     .filter(p => p.slug !== resolvedParams.slug)
@@ -71,9 +70,35 @@ export default async function SinglePost({ params }) {
     year: 'numeric'
   });
 
+  // Automated Article JSON-LD Schema
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.title,
+    "image": post.featuredImage?.node?.sourceUrl ? [post.featuredImage.node.sourceUrl] : [],
+    "datePublished": post.date,
+    "dateModified": post.modified || post.date,
+    "author": [{
+        "@type": "Person",
+        "name": post.author?.node?.name || 'Admin',
+        "url": "https://trendifacts.com/about"
+    }],
+    "publisher": {
+      "@type": "Organization",
+      "name": "Trendifacts",
+      "url": "https://trendifacts.com"
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
       
+      {/* JSON-LD Schema Injection */}
+      <script 
+        type="application/ld+json" 
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} 
+      />
+
       {/* 1. DARK HERO HEADER */}
       <header className="bg-slate-900 pt-16 pb-40 px-4 border-b-4 border-slate-800">
         <div className="max-w-4xl mx-auto text-center">
@@ -113,7 +138,7 @@ export default async function SinglePost({ params }) {
                 </Link>
               </div>
 
-              {/* PARSED ARTICLE CONTENT WITH AUTO-ADS AND PRODUCT CARDS */}
+              {/* PARSED ARTICLE CONTENT */}
               <div 
                 id="article-content"
                 className="prose prose-lg prose-slate max-w-none font-sans
@@ -130,6 +155,8 @@ export default async function SinglePost({ params }) {
 
                   const parseOptions = {
                     replace: (domNode) => {
+                      
+                      // 1. Inject Product Cards
                       if (domNode.attribs && domNode.attribs.class === 'react-product-card') {
                         return (
                           <ProductCard 
@@ -142,7 +169,20 @@ export default async function SinglePost({ params }) {
                         );
                       }
 
+                      // 2. Inject Calculator if WP Editor typed [runtime-calculator]
+                      if (
+                        domNode.name === 'p' &&
+                        domNode.children?.length === 1 &&
+                        domNode.children[0].data === '[runtime-calculator]'
+                      ) {
+                        return <RuntimeCalculator />;
+                      }
+
+                      // 3. Inject In-Content AdSlots (Every 4 paragraphs)
                       if (domNode.name === 'p') {
+                        // Avoid counting paragraphs that just contain shortcodes
+                        if (domNode.children?.[0]?.data?.includes('[')) return;
+                        
                         paragraphCount++;
                         if (paragraphCount % 4 === 0) {
                           return (
