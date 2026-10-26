@@ -7,6 +7,25 @@ import ProductCard from '@/components/ProductCard';
 import RuntimeCalculator from '@/components/RuntimeCalculator';
 import parse, { domToReact } from 'html-react-parser';
 
+// Helper to automatically extract Questions & Answers from WP HTML
+const extractFAQs = (content) => {
+  const faqs = [];
+  const regex = /<h[23][^>]*>(.*?\?)<\/h[23]>\s*<p>(.*?)<\/p>/gi;
+  let match;
+  
+  while ((match = regex.exec(content)) !== null) {
+    faqs.push({
+      "@type": "Question",
+      "name": match[1].replace(/<[^>]+>/g, '').trim(), // Cleans any nested span/strong tags
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": match[2].replace(/<[^>]+>/g, '').trim()
+      }
+    });
+  }
+  return faqs;
+};
+
 // Generate SEO Metadata
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
@@ -90,6 +109,14 @@ export default async function SinglePost({ params }) {
     }
   };
 
+  // Generate Dynamic FAQ Schema
+  const extractedFAQs = extractFAQs(post.content);
+  const faqSchemaData = extractedFAQs.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": extractedFAQs
+  } : null;
+
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
       
@@ -98,6 +125,12 @@ export default async function SinglePost({ params }) {
         type="application/ld+json" 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} 
       />
+      {faqSchemaData && (
+        <script 
+          type="application/ld+json" 
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} 
+        />
+      )}
 
       {/* 1. DARK HERO HEADER */}
       <header className="bg-slate-900 pt-16 pb-40 px-4 border-b-4 border-slate-800">
