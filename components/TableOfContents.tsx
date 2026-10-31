@@ -84,9 +84,11 @@ export default function TableOfContents() {
       
       <nav className="max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
         <ul className="flex flex-col gap-3 text-sm font-medium">
-          {headings.map((heading) => (
+          {headings
+            .filter((heading) => heading.id && heading.text?.trim())
+            .map((heading, index) => (
             <li 
-              key={heading.id} 
+              key={`${heading.id}-${index}`} 
               style={{ paddingLeft: heading.level === 3 ? '1rem' : '0' }}
             >
               <a

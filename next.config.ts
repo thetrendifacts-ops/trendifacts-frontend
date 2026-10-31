@@ -1,9 +1,24 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // 1. NEW: Image Whitelisting for Amazon and Cloudinary
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'm.media-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      }
+    ],
+  },
+
+  // 2. EXISTING: Your SEO Redirects
   async redirects() {
     return [
-      // 1. Redirect www to non-www
+      // Redirect www to non-www
       {
         source: "/:path*",
         has: [
@@ -15,7 +30,7 @@ const nextConfig: NextConfig = {
         destination: "https://trendifacts.com/:path*",
         permanent: true,
       },
-      // 2. EcoFlow Delta Pro slug redirect
+      // EcoFlow Delta Pro slug redirect
       {
         source: "/ecoflow-delta-pro-review-is-the-3600wh-home-backup-worth-the-price",
         destination: "/ecoflow-delta-pro-review",

@@ -4,11 +4,31 @@ import Link from 'next/link';
 import AdSlot from '@/components/AdSlot';
 import TableOfContents from '@/components/TableOfContents';
 import ProductCard from '@/components/ProductCard';
+import AmazonProductCard from '@/components/AmazonProductCard';
+import QuickPick from '@/components/QuickPick';
 import RuntimeCalculator from '@/components/RuntimeCalculator';
 import parse, { domToReact } from 'html-react-parser';
 
-// Helper to automatically extract Questions & Answers from WP HTML
-const extractFAQs = (content) => {
+// Helper that strips CKEditor's auto-links, spans, and &nbsp; entities inside shortcodes
+const getNodeText = (node: any): string => {
+  if (!node) return '';
+  if (node.type === 'text') return node.data || '';
+  if (node.children && Array.isArray(node.children)) {
+    return node.children.map(getNodeText).join('');
+  }
+  return '';
+};
+
+// Helper to resolve both legacy WordPress image objects and new flat Cloudinary URLs
+const getFeaturedImageUrl = (featuredImage: any): string | null => {
+  if (!featuredImage) return null;
+  if (typeof featuredImage === 'string') return featuredImage;
+  return featuredImage?.node?.sourceUrl || null;
+};
+
+// Helper to automatically extract Questions & Answers from HTML
+const extractFAQs = (content: string) => {
+  if (!content) return [];
   const faqs = [];
   const regex = /<h[23][^>]*>(.*?\?)<\/h[23]>\s*<p>(.*?)<\/p>/gi;
   let match;
@@ -16,7 +36,7 @@ const extractFAQs = (content) => {
   while ((match = regex.exec(content)) !== null) {
     faqs.push({
       "@type": "Question",
-      "name": match[1].replace(/<[^>]+>/g, '').trim(), // Cleans any nested span/strong tags
+      "name": match[1].replace(/<[^>]+>/g, '').trim(),
       "acceptedAnswer": {
         "@type": "Answer",
         "text": match[2].replace(/<[^>]+>/g, '').trim()
@@ -26,15 +46,16 @@ const extractFAQs = (content) => {
   return faqs;
 };
 
-// Generate SEO Metadata
-export async function generateMetadata({ params }) {
+// Generate SEO Metadata using custom SEO fields
+export async function generateMetadata({ params }: { params: any }) {
   const resolvedParams = await params;
   const post = await getPostBySlug(resolvedParams.slug);
   
   if (!post) return { title: 'Post Not Found | Trendifacts' };
   
   return { 
-    title: `${post.title} | Trendifacts`,
+    title: post.seoTitle ? `${post.seoTitle} | Trendifacts` : `${post.title} | Trendifacts`,
+    description: post.metaDescription || 'In-depth reviews, wattage math, and blackout preparedness guides.',
     alternates: {
       canonical: `https://trendifacts.com/${resolvedParams.slug}`,
     },
@@ -42,31 +63,35 @@ export async function generateMetadata({ params }) {
 }
 
 // Reusable Card for the "Read Next" section
-const RelatedPostCard = ({ post }) => (
-  <Link href={`/${post.slug}`} className="group flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg border border-slate-100 transition-all h-full">
-    <div className="w-full aspect-video rounded-xl overflow-hidden bg-slate-100 mb-4 relative">
-      {post.featuredImage ? (
-        <img 
-          src={post.featuredImage.node.sourceUrl} 
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-          alt={post.title} 
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-slate-300">No Image</div>
-      )}
-      {post.reviewDetails?.reviewScore && (
-        <div className="absolute top-2 left-2 bg-slate-900 text-emerald-400 font-black text-xs px-2 py-1 rounded shadow-lg z-20">
-          {post.reviewDetails.reviewScore} Score
-        </div>
-      )}
-    </div>
-    <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2">
-      {post.title}
-    </h3>
-  </Link>
-);
+const RelatedPostCard = ({ post }: { post: any }) => {
+  const imageUrl = getFeaturedImageUrl(post.featuredImage);
 
-export default async function SinglePost({ params }) {
+  return (
+    <Link href={`/${post.slug}`} className="group flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-lg border border-slate-100 transition-all h-full">
+      <div className="w-full aspect-video rounded-xl overflow-hidden bg-slate-100 mb-4 relative">
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+            alt={post.title} 
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-slate-300">No Image</div>
+        )}
+        {post.reviewDetails?.reviewScore && (
+          <div className="absolute top-2 left-2 bg-slate-900 text-emerald-400 font-black text-xs px-2 py-1 rounded shadow-lg z-20">
+            {post.reviewDetails.reviewScore} Score
+          </div>
+        )}
+      </div>
+      <h3 className="text-lg font-bold text-slate-900 mb-2 leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2">
+        {post.title}
+      </h3>
+    </Link>
+  );
+};
+
+export default async function SinglePost({ params }: { params: any }) {
   const resolvedParams = await params;
   
   const [post, latestPostsData] = await Promise.all([
@@ -79,8 +104,8 @@ export default async function SinglePost({ params }) {
   }
 
   const relatedPosts = latestPostsData?.edges
-    ?.map(edge => edge.node)
-    .filter(p => p.slug !== resolvedParams.slug)
+    ?.map((edge: any) => edge.node)
+    .filter((p: any) => p.slug !== resolvedParams.slug && p.status !== 'draft')
     .slice(0, 3) || [];
 
   const formattedDate = new Date(post.date).toLocaleDateString('en-US', {
@@ -89,12 +114,15 @@ export default async function SinglePost({ params }) {
     year: 'numeric'
   });
 
+  const heroImageUrl = getFeaturedImageUrl(post.featuredImage);
+
   // Automated Article JSON-LD Schema
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "Article",
     "headline": post.title,
-    "image": post.featuredImage?.node?.sourceUrl ? [post.featuredImage.node.sourceUrl] : [],
+    "description": post.metaDescription || '',
+    "image": heroImageUrl ? [heroImageUrl] : [],
     "datePublished": post.date,
     "dateModified": post.modified || post.date,
     "author": [{
@@ -186,10 +214,10 @@ export default async function SinglePost({ params }) {
                 {(() => {
                   let paragraphCount = 0;
 
-                  const parseOptions = {
-                    replace: (domNode) => {
+                  const parseOptions: any = {
+                    replace: (domNode: any) => {
                       
-                      // 1. Inject Product Cards
+                      // 1. Inject Legacy Product Cards
                       if (domNode.attribs && domNode.attribs.class === 'react-product-card') {
                         return (
                           <ProductCard 
@@ -202,19 +230,46 @@ export default async function SinglePost({ params }) {
                         );
                       }
 
-                      // 2. Inject Calculator if WP Editor typed [runtime-calculator]
-                      if (
-                        domNode.name === 'p' &&
-                        domNode.children?.length === 1 &&
-                        domNode.children[0].data === '[runtime-calculator]'
-                      ) {
-                        return <RuntimeCalculator />;
+                      // 2. Inject Custom Shortcodes ([AMAZON_CARD], [QUICK_PICK], [runtime-calculator])
+                      if (domNode.name === 'p' || domNode.name === 'div') {
+                        const text = getNodeText(domNode).replace(/\u00A0/g, ' ').trim();
+
+                        if (text === '[runtime-calculator]') {
+                          return <RuntimeCalculator />;
+                        }
+
+                        if (/^\[AMAZON_CARD\s*\|\|/i.test(text) && text.endsWith(']')) {
+                          const parts = text.slice(1, -1).split('||').map((s: string) => s.trim());
+                          return (
+                            <div className="not-prose my-8">
+                              <AmazonProductCard
+                                title={parts[1]}
+                                badge={parts[2]}
+                                image={parts[3]}
+                                amazonUrl={parts[4]}
+                              />
+                            </div>
+                          );
+                        }
+
+                        if (/^\[QUICK_PICK\s*\|\|/i.test(text) && text.endsWith(']')) {
+                          const parts = text.slice(1, -1).split('||').map((s: string) => s.trim());
+                          return (
+                            <div className="not-prose my-8">
+                              <QuickPick
+                                title={parts[1]}
+                                reason={parts[2]}
+                                url={parts[3]}
+                              />
+                            </div>
+                          );
+                        }
                       }
 
                       // 3. Inject In-Content AdSlots (Every 4 paragraphs)
                       if (domNode.name === 'p') {
-                        // Avoid counting paragraphs that just contain shortcodes
-                        if (domNode.children?.[0]?.data?.includes('[')) return;
+                        const rawParagraphText = getNodeText(domNode);
+                        if (rawParagraphText.includes('[')) return;
                         
                         paragraphCount++;
                         if (paragraphCount % 4 === 0) {
@@ -231,7 +286,7 @@ export default async function SinglePost({ params }) {
                     }
                   };
 
-                  return parse(post.content, parseOptions);
+                  return parse(post.content || '', parseOptions);
                 })()}
               </div>
               
@@ -252,8 +307,8 @@ export default async function SinglePost({ params }) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map(relatedPost => (
-                <RelatedPostCard key={relatedPost.id} post={relatedPost} />
+              {relatedPosts.map((relatedPost: any) => (
+                <RelatedPostCard key={relatedPost.id || relatedPost.slug} post={relatedPost} />
               ))}
             </div>
           </section>

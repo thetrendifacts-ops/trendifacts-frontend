@@ -1,0 +1,16 @@
+[debug] [2026-10-27T13:16:47.001Z] ----------------------------------------------------------------------
+[debug] [2026-10-27T13:16:47.016Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\M O B\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only hosting
+[debug] [2026-10-27T13:16:47.017Z] CLI Version:   15.22.4
+[debug] [2026-10-27T13:16:47.018Z] Platform:      win32
+[debug] [2026-10-27T13:16:47.018Z] Node Version:  v22.17.1
+[debug] [2026-10-27T13:16:47.019Z] Detected Agent: unknown
+[debug] [2026-10-27T13:16:47.019Z] Time:          Tue Oct 27 2026 14:16:47 GMT+0100 (West Africa Standard Time)
+[debug] [2026-10-27T13:16:47.020Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-10-27T13:16:47.033Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-10-27T13:18:11.236Z] Error: Timed out.
+    at Timeout._onTimeout (C:\Users\M O B\AppData\Roaming\npm\node_modules\firebase-tools\lib\utils.js:313:49)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7)
+[error] 
+[error] Error: An unexpected error has occurred.
