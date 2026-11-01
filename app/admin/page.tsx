@@ -78,7 +78,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/posts');
       const data = await res.json();
-      if (data.posts) setPosts(data.posts);
+      if (data.posts) setPosts(Array.isArray(data) ? data : data.posts || []);;
     } catch (err) {
       console.error('Failed to load posts:', err);
     }

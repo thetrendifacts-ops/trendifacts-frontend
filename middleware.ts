@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
+  // Automatically allow localhost without password prompt
+  if (process.env.NODE_ENV === 'development') {
+    return NextResponse.next();
+  }
+
   const { pathname } = req.nextUrl;
 
   const isAdminPage = pathname.startsWith('/admin');
@@ -17,7 +22,6 @@ export function middleware(req: NextRequest) {
   const adminUser = process.env.ADMIN_USERNAME || 'admin';
   const adminPass = process.env.ADMIN_PASSWORD;
 
-  // Fail closed if ADMIN_PASSWORD hasn't been configured yet
   if (!adminPass) {
     return new NextResponse('Admin credentials not configured in environment variables.', {
       status: 500,
@@ -40,6 +44,9 @@ export function middleware(req: NextRequest) {
     },
   });
 }
+
+export const proxy = middleware;
+export default middleware;
 
 export const config = {
   matcher: ['/admin/:path*', '/api/posts/:path*', '/api/upload/:path*'],
