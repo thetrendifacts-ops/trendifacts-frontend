@@ -12,6 +12,36 @@ import RuntimeCalculator from '@/components/RuntimeCalculator';
 
 const CustomEditor = dynamic(() => import('@/components/CustomEditor'), { ssr: false });
 
+// Normalizes any legacy category name or slug into the 3 main dropdown values
+const normalizeAdminCategory = (rawCategory: any): string => {
+  if (!rawCategory) return 'runtime-sizing-guides';
+  const firstVal = Array.isArray(rawCategory) ? rawCategory[0] : rawCategory;
+  const str = String(firstVal || '').toLowerCase().trim();
+
+  if (str.includes('runtime') || str.includes('sizing')) {
+    return 'runtime-sizing-guides';
+  }
+  if (
+    str.includes('balcony') ||
+    str.includes('renter') ||
+    str.includes('solar') ||
+    str.includes('gear') ||
+    str.includes('buying')
+  ) {
+    return 'gear-buying-guides';
+  }
+  if (str.includes('outage') || str.includes('prep') || str.includes('checklist')) {
+    return 'outage-prep-checklists';
+  }
+  return 'runtime-sizing-guides';
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'runtime-sizing-guides': 'Runtime Guides',
+  'gear-buying-guides': 'Balcony & Renter Solar',
+  'outage-prep-checklists': 'Outage Prep',
+};
+
 // Helper to clean HTML tags & entities that CKEditor injects inside shortcodes
 const cleanShortcodeInner = (str: string): string => {
   return str
@@ -78,7 +108,8 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('/api/posts');
       const data = await res.json();
-      if (data.posts) setPosts(Array.isArray(data) ? data : data.posts || []);;
+      const loadedPosts = Array.isArray(data) ? data : data.posts || [];
+      setPosts(loadedPosts);
     } catch (err) {
       console.error('Failed to load posts:', err);
     }
@@ -93,7 +124,7 @@ export default function AdminDashboard() {
     setSlug(post.slug || '');
     setSeoTitle(post.seoTitle || '');
     setMetaDescription(post.metaDescription || '');
-    setCategory(post.category || 'runtime-sizing-guides');
+    setCategory(normalizeAdminCategory(post.category));
     setFeaturedImage(post.featuredImage?.node?.sourceUrl || post.featuredImage || '');
     setReviewScore(post.reviewDetails?.reviewScore || '');
     setContent(post.content || '');
@@ -175,6 +206,7 @@ export default function AdminDashboard() {
     setStatus(targetStatus === 'draft' ? 'Saving draft to Firebase...' : 'Publishing to Firebase...');
 
     try {
+      const normalizedCat = normalizeAdminCategory(category);
       const res = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,7 +215,7 @@ export default function AdminDashboard() {
           slug,
           seoTitle,
           metaDescription,
-          category,
+          category: normalizedCat,
           featuredImage,
           reviewScore,
           content,
@@ -196,6 +228,7 @@ export default function AdminDashboard() {
       if (res.ok) {
         const savedSlug = data.slug || slug;
         setSlug(savedSlug);
+        setCategory(normalizedCat);
         setPostStatus(targetStatus);
         setIsEditingExisting(true);
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -339,6 +372,7 @@ export default function AdminDashboard() {
           <ul className="space-y-2 overflow-y-auto pr-1 flex-1">
             {filteredPosts.map((post) => {
               const isDraft = post.status === 'draft';
+              const normCat = normalizeAdminCategory(post.category);
               return (
                 <li
                   key={post.slug}
@@ -362,8 +396,11 @@ export default function AdminDashboard() {
                       </span>
                       <span className="line-clamp-1">{post.title}</span>
                     </div>
-                    <div className="text-[11px] text-slate-400 font-normal truncate">
-                      /{post.slug}
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 font-normal truncate">
+                      <span className="text-[10px] font-semibold text-slate-500 bg-slate-200/70 px-1.5 py-0.2 rounded">
+                        {CATEGORY_LABELS[normCat] || 'Runtime Guides'}
+                      </span>
+                      <span className="truncate">/{post.slug}</span>
                     </div>
                   </div>
                   <button
