@@ -4,8 +4,6 @@ import AdSlot from '../components/AdSlot';
 
 export const dynamic = 'force-dynamic';
 
-// Default Sidebar Gear Picks (You can replace these image URLs or Amazon links anytime,
-// or let the page automatically pull products from your latest articles' [AMAZON_CARD] shortcodes!)
 const DEFAULT_SIDEBAR_GEAR = [
   {
     title: 'EcoFlow DELTA 2 Max',
@@ -58,8 +56,8 @@ function extractSidebarGearFromPosts(posts: any[]) {
 
   const regex = /\[\s*AMAZON_CARD\s*\|\|([\s\S]*?)\]/gi;
 
-  for (const edge of posts) {
-    const post = edge?.node || edge;
+  for (const item of posts) {
+    const post = item?.node || item;
     const content = String(post?.content || '');
     let match;
     while ((match = regex.exec(content)) !== null) {
@@ -75,7 +73,7 @@ function extractSidebarGearFromPosts(posts: any[]) {
         title &&
         image &&
         image.startsWith('http') &&
-        !extracted.some((item) => item.title.toLowerCase() === title.toLowerCase())
+        !extracted.some((existing) => existing.title.toLowerCase() === title.toLowerCase())
       ) {
         extracted.push({
           title,
@@ -108,6 +106,7 @@ const CompactCard = ({ post }: { post: any }) => {
         {imgUrl ? (
           <img
             src={imgUrl}
+            referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             alt={post.title}
           />
@@ -153,6 +152,7 @@ const PostCard = ({ post }: { post: any }) => {
         {imgUrl ? (
           <img
             src={imgUrl}
+            referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             alt={post.title}
           />
@@ -195,18 +195,22 @@ export default async function Home() {
       getCategoryBySlug('outage-prep-checklists'),
     ]);
 
-  const latestPosts = latestPostsData?.edges || [];
+  // Works whether latestPostsData is an Array of posts OR has .edges
+  const rawList = Array.isArray(latestPostsData)
+    ? latestPostsData
+    : latestPostsData?.edges || [];
 
-  const heroPost = latestPosts[0]?.node;
-  const subPosts = [latestPosts[1]?.node, latestPosts[2]?.node].filter(Boolean);
+  const normalizedPosts = rawList.map((item: any) => item?.node || item).filter(Boolean);
 
-  const topRatedPosts = latestPosts.slice(3, 6).map((edge: any) => edge.node);
+  const heroPost = normalizedPosts[0];
+  const subPosts = [normalizedPosts[1], normalizedPosts[2]].filter(Boolean);
+  const topRatedPosts = normalizedPosts.slice(3, 6);
 
   const runtimePosts = runtimeCategory?.posts?.edges?.slice(0, 2) || [];
   const gearPosts = gearCategory?.posts?.edges?.slice(0, 2) || [];
   const outagePosts = outageCategory?.posts?.edges?.slice(0, 2) || [];
 
-  const sidebarGearPicks = extractSidebarGearFromPosts(latestPosts);
+  const sidebarGearPicks = extractSidebarGearFromPosts(normalizedPosts);
 
   return (
     <main className="min-h-screen bg-[#f8fafc] font-sans pb-20">
@@ -223,6 +227,7 @@ export default async function Home() {
               {getImageUrl(heroPost) && (
                 <img
                   src={getImageUrl(heroPost)}
+                  referrerPolicy="no-referrer"
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   alt={heroPost.title}
                 />
@@ -242,7 +247,7 @@ export default async function Home() {
             <div className="lg:col-span-4 flex flex-col gap-4">
               {subPosts.map((post: any) => (
                 <Link
-                  key={post.id}
+                  key={post.id || post.slug}
                   href={`/${post?.slug}`}
                   className="group relative rounded-2xl overflow-hidden flex-1 min-h-[240px]"
                 >
@@ -250,6 +255,7 @@ export default async function Home() {
                   {getImageUrl(post) && (
                     <img
                       src={getImageUrl(post)}
+                      referrerPolicy="no-referrer"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       alt={post.title}
                     />
@@ -288,7 +294,7 @@ export default async function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {topRatedPosts.map((post: any) => (
-                <CompactCard key={post.id} post={post} />
+                <CompactCard key={post.id || post.slug} post={post} />
               ))}
             </div>
           </section>
@@ -319,7 +325,7 @@ export default async function Home() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {runtimePosts.map(({ node }: { node: any }) => (
-                    <PostCard key={node.id} post={node} />
+                    <PostCard key={node.id || node.slug} post={node} />
                   ))}
                 </div>
               </section>
@@ -341,7 +347,7 @@ export default async function Home() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {gearPosts.map(({ node }: { node: any }) => (
-                    <PostCard key={node.id} post={node} />
+                    <PostCard key={node.id || node.slug} post={node} />
                   ))}
                 </div>
               </section>
@@ -363,7 +369,7 @@ export default async function Home() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {outagePosts.map(({ node }: { node: any }) => (
-                    <PostCard key={node.id} post={node} />
+                    <PostCard key={node.id || node.slug} post={node} />
                   ))}
                 </div>
               </section>
@@ -393,6 +399,7 @@ export default async function Home() {
                       <img
                         src={item.image}
                         alt={item.title}
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
@@ -412,11 +419,6 @@ export default async function Home() {
                     </a>
                   </div>
                 ))}
-              </div>
-
-              {/* Sidebar AdSlot */}
-              <div className="hidden lg:block">
-                <AdSlot format="vertical" responsive="true" />
               </div>
             </div>
           </aside>
