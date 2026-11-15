@@ -93,6 +93,11 @@ export default function AdminDashboard() {
   const [showPreview, setShowPreview] = useState(false);
   const [status, setStatus] = useState('');
 
+  // Auto-Share Social State
+  const [shareFB, setShareFB] = useState(false);
+  const [sharePin, setSharePin] = useState(false);
+  const [shareIG, setShareIG] = useState(false);
+
   // Shortcode Builder State
   const [activeBuilder, setActiveBuilder] = useState<'none' | 'amazon' | 'quickpick'>('none');
   const [amzTitle, setAmzTitle] = useState('');
@@ -126,7 +131,7 @@ export default function AdminDashboard() {
     setMetaDescription(post.metaDescription || '');
     setCategory(normalizeAdminCategory(post.category));
     setFeaturedImage(post.featuredImage?.node?.sourceUrl || post.featuredImage || '');
-    setReviewScore(post.reviewDetails?.reviewScore || '');
+    setReviewScore(post.reviewDetails?.reviewScore || post.reviewScore || '');
     setContent(post.content || '');
     setPostStatus(post.status || 'published');
     setIsEditingExisting(true);
@@ -238,6 +243,39 @@ export default function AdminDashboard() {
             : `🚀 Published live at ${time}`
         );
         fetchPosts();
+
+        // Trigger Social Media Auto-Share if publishing and any platform is checked
+        if (targetStatus === 'published' && (shareFB || sharePin || shareIG)) {
+          setStatus('🚀 Published! Sending to social media...');
+          try {
+            const shareRes = await fetch('/api/social-share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title,
+                link: `https://trendifacts.com/${savedSlug}`,
+                imageUrl: featuredImage,
+                excerpt: metaDescription,
+                platforms: {
+                  facebook: shareFB,
+                  pinterest: sharePin,
+                  instagram: shareIG,
+                },
+              }),
+            });
+            const shareData = await shareRes.json();
+            if (shareRes.ok) {
+              setStatus(`🚀 Published & shared to social media at ${time}!`);
+              setShareFB(false);
+              setSharePin(false);
+              setShareIG(false);
+            } else {
+              setStatus(`⚠️ Published live, but social share failed: ${shareData.error || 'Check tokens'}`);
+            }
+          } catch {
+            setStatus(`⚠️ Published live, but social share request failed.`);
+          }
+        }
       } else {
         setStatus(`❌ Error: ${data.error || 'Failed to save'}`);
       }
@@ -471,6 +509,38 @@ export default function AdminDashboard() {
                 >
                   {showPreview ? '✏️ Back to Editor' : '👁️ Preview'}
                 </button>
+
+                {/* Social Media Auto-Share Toggles */}
+                <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+                  <span className="text-[10px] font-black uppercase text-slate-400">Share:</span>
+                  <label className="flex items-center gap-1 text-xs font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={shareFB}
+                      onChange={(e) => setShareFB(e.target.checked)}
+                      className="accent-blue-600"
+                    />
+                    FB
+                  </label>
+                  <label className="flex items-center gap-1 text-xs font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sharePin}
+                      onChange={(e) => setSharePin(e.target.checked)}
+                      className="accent-red-600"
+                    />
+                    Pin
+                  </label>
+                  <label className="flex items-center gap-1 text-xs font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={shareIG}
+                      onChange={(e) => setShareIG(e.target.checked)}
+                      className="accent-pink-600"
+                    />
+                    IG
+                  </label>
+                </div>
 
                 <button
                   type="button"
