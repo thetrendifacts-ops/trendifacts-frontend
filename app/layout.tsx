@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Header from "../components/Header";
-import Footer from "../components/Footer"; 
+import Footer from "../components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,19 +15,42 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Trendifacts - Premium Testing & Technical Guides",
-  description: "In-depth reviews and guides for tech and power stations.",
+  metadataBase: new URL("https://trendifacts.com"),
+  title: "Trendifacts: Power Station Sizing & Outage Guides",
+  description:
+    "Portable power station runtime charts, wattage sizing math, solar recharge guides, and home blackout prep—built on verified manufacturer specs.",
+  openGraph: {
+    siteName: "Trendifacts",
+    type: "website",
+    url: "https://trendifacts.com",
+    title: "Trendifacts: Power Station Sizing & Outage Guides",
+    description:
+      "Portable power station runtime charts, wattage sizing math, solar recharge guides, and home blackout prep—built on verified manufacturer specs.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trendifacts: Power Station Sizing & Outage Guides",
+    description:
+      "Portable power station runtime charts, wattage sizing math, solar recharge guides, and home blackout prep.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   verification: {
     other: {
       "p:domain_verify": ["9390856b389e6d258a8f5522fbeb2957"],
     },
   },
 };
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const adsenseId = process.env.NEXT_PUBLIC_ADSENSE_ID;
+
   return (
     <html
       lang="en"
@@ -36,28 +58,27 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* The Global AdSense Script */}
-        <Script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_ID}`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        {/* Global AdSense Script — only loads when NEXT_PUBLIC_ADSENSE_ID is configured */}
+        {adsenseId && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
-      <body 
-        className="min-h-full flex flex-col bg-slate-50 text-slate-900"
+      <body
+        className="min-h-full flex flex-col bg-slate-50 text-slate-900 overflow-x-clip"
         suppressHydrationWarning
       >
-        {/* The Global Navigation Header */}
+        {/* Global Navigation Header */}
         <Header />
-        
-        {/* Main Content Area */}
-        <main className="flex-grow">
-          {children}
-        </main>
 
-        {/* The Global Amazon Footer */}
-        <Footer /> 
+        {/* Main Content Area */}
+        <main className="flex-grow">{children}</main>
+
+        {/* Global Footer */}
+        <Footer />
       </body>
     </html>
   );
