@@ -1,12 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // 1. Prevent minor JS/TS type mismatches from halting Vercel builds
+  // 1. Enforce clean URLs without trailing slashes (308 redirects /slug/ -> /slug)
+  trailingSlash: false,
+
+  // 2. Prevent minor JS/TS type mismatches from halting Vercel builds
   typescript: {
     ignoreBuildErrors: true,
   },
 
-  // 2. Image Whitelisting for Amazon and Cloudinary
+  // 3. Image Whitelisting for Amazon and Cloudinary
   images: {
     remotePatterns: [
       {
@@ -16,11 +19,11 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-      }
+      },
     ],
   },
 
-  // 3. Existing SEO Redirects
+  // 4. Permanent SEO Redirects
   async redirects() {
     return [
       {
